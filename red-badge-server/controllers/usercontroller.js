@@ -4,6 +4,7 @@ const { Router } = require("express");
 const { UserModel } = require("../models");
 const { UniqueConstraintError } = require("sequelize/lib/errors");
 const validateSession = require("../middleware/validate-session");
+const validateAdmin = require("../middleware/validate-admin");
 
 
 const router = Router();
@@ -85,9 +86,15 @@ router.post("/login", async function (req, res) {
         let token = jwt.sign({ id: loginUser.id }, process.env.JWT_SECRET, { expiresIn: 60 * 60 * 24});
 
         res.status(200).json({
-          user: loginUser,
-          message: "Login Succesful!",
-          sessionToken: token
+          message: "Login successful!",
+          user: {
+            user: loginUser,
+            role: loginUser.role,
+            message: "Login Succesful!",
+            sessionToken: token,
+            password: password,
+            username: username
+          },
         });
       } else {
         res.status(401).json({
@@ -133,9 +140,26 @@ router.get("/mine", validateSession, async (req, res) => {
 });
 
 /*
-======================
+================================
+  Get user MasterList (ADMIN)
+================================
+*/
+
+router.get("/MasterList", validateAdmin, async (req, res) => {
+  try {
+    const masterList = await UserModel.findAll();
+    res.status(200).json(masterList);
+  } catch (e) {
+    res.status(500).json({
+      error: e 
+    });
+  };
+});
+
+/*
+=========================
     Edit Account Info
-======================
+=========================
 */
 
 router.put("/edit", validateSession, async (req, res) => {
@@ -170,16 +194,15 @@ router.put("/edit", validateSession, async (req, res) => {
 });
 
 /*
-======================
-   Delete Account
-======================
+========================
+   Delete Your Account
+========================
 */
 
 router.delete("/delete", validateSession, async (req, res) => {
   const myId = req.user.id;
 
   try {
-
     const query = {
       where: {
         id: myId,
@@ -187,11 +210,40 @@ router.delete("/delete", validateSession, async (req, res) => {
     };
 
     await UserModel.destroy(query);
-    res.status(200).json({
-      message: "Account deleted"
-    });
+      res.status(200).json({
+        message: "Account deleted"
+      });
+  
   } catch (e) {
+    res.status(500).json({
+      error: e
+    });
+  };
+});
 
+/*
+========================
+   Admin Delete
+========================
+*/
+
+router.delete("/delete/:id", validateAdmin, async (req, res) => {
+  
+  const accountId = req.params.id;
+  
+  try {
+    const query = {
+      where: {
+        id: accountId,
+      }
+    };
+    
+    await UserModel.destroy(query);
+      res.status(200).json({
+        message: "Account deleted"
+      });
+  
+  } catch (e) {
     res.status(500).json({
       error: e
     });

@@ -8,6 +8,10 @@ const Comment = db.define("comments", {
     },
     Score: {
         type: DataTypes.INTEGER
+    },
+    owner: {
+        type: DataTypes.STRING,
+        allowNull: false
     }
 });
 

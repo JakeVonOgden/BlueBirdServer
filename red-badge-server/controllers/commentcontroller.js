@@ -4,7 +4,12 @@ const { CommentModel } = require("../models");
 
 const router = Router();
 
-// Create Comment
+
+/*
+======================
+   Create Comment
+======================
+*/
 
 router.post("/create", validateSession, async (req, res) => {
     
@@ -15,7 +20,7 @@ router.post("/create", validateSession, async (req, res) => {
         await CommentModel.create({
             content: content,
             reviewId: reviewId,
-            userId: req.user.id
+            owner: req.user.username
         })
         .then(
             comment => {
@@ -32,7 +37,12 @@ router.post("/create", validateSession, async (req, res) => {
     };
 });
 
-// Get comments by review
+
+/*
+===========================
+   Get comments by Review
+===========================
+*/
 
 router.get("/:reviewId", async (req, res) => {
     const { reviewId } = req.params;
@@ -53,18 +63,23 @@ router.get("/:reviewId", async (req, res) => {
     };
 });
 
-// Edit comment
+
+/*
+======================
+   Edit Comment
+======================
+*/
 
 router.put("/edit/:entryId", validateSession, async (req, res) => {
     
     const { content } = req.body;
-    const reviewId = req.params.entryId;
-    const userId = req.user.id;
+    const commentId = req.params.entryId;
+    const owner = req.user.username;
 
     const query = {
         where: {
-            userId: userId,
-            reviewId: reviewId
+            owner: owner,
+            id: commentId
         }
     };
 
@@ -87,24 +102,36 @@ router.put("/edit/:entryId", validateSession, async (req, res) => {
     };
 });
 
-// Delete comment
+
+/*
+======================
+   Delete Comment
+======================
+*/
 
 router.delete("/delete/:id", validateSession, async (req, res) => {
+    const userId = req.user.id
+    let query;
 
+    if (req.user.role == 'Admin') {
+        query = { where: { id: req.params.id } };
+    } else {
+        query = { where: { id: req.params.id, userId: userId } };
+    }
+    
     try {
-
-        const deletedComment = await CommentModel.destroy({
-            where: {
-                id: req.params.id,
-            },
-        });
-
-        res.status(200).json({
-            message: "Comment Removed",
-            deletedComment,
-        });
+        const deletedComment = await CommentModel.destroy(query)
+        if (deletedComment !== 0) {
+            res.status(200).json({
+                message: "Comment Removed",
+                deletedComment,
+            });
+        } else {
+            res.status(200).json({
+                message: "no entry found" 
+            });
+        }
     } catch (e) {
-
         res.status(500).json({
             message: "Failed to remove Comment",
             error: e

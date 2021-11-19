@@ -3,7 +3,7 @@ const db = require("../db");
 
 const Review = db.define("reviews", {
     anime: {
-        type: DataTypes.JSON,
+        type: DataTypes.STRING,
         allowNull: false
     },
     rating: {
@@ -11,9 +11,15 @@ const Review = db.define("reviews", {
         allowNull: false
     },
     content: {
-        type: DataTypes.STRING(255),
+        type: DataTypes.TEXT,
         allowNull: false
     },
+    image: {
+        type: DataTypes.STRING,
+    },
+    owner: {
+        type: DataTypes.STRING,
+    }
 });
 
 module.exports = Review;

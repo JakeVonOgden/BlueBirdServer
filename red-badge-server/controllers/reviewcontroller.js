@@ -4,18 +4,25 @@ const { ReviewModel } = require("../models");
 
 const router = Router();
 
-// Review Create
+
+/*
+======================
+   Review Create
+======================
+*/
 
 router.post("/create", validateSession, async (req, res) => {
     
-    const {anime, rating, content} = req.body;
+    const {anime, rating, content, image} = req.body;
 
     try {
         await ReviewModel.create({
             anime: anime,
             content: content,
             rating: rating,
-            userId: req.user.id
+            image: image,
+            owner: req.user.username,
+            userId: req.user.id,
         })
         .then(
             review => {
@@ -34,7 +41,12 @@ router.post("/create", validateSession, async (req, res) => {
     };
 });
 
-// Get your reviews
+
+/*
+=======================
+   Get Your Reviews
+=======================
+*/
 
 router.get("/mine", validateSession, async (req, res) => {
     let { id } = req.user;
@@ -55,7 +67,12 @@ router.get("/mine", validateSession, async (req, res) => {
     };
 });
 
-// Get Reviews by Anime
+
+/*
+==========================
+   Get Reviews by Anime
+==========================
+*/
 
 router.get("/:anime", async (req, res) => {
     const { anime } = req.params;
@@ -64,7 +81,7 @@ router.get("/:anime", async (req, res) => {
 
         const results = await ReviewModel.findAll({
             where: {
-                anime: {"title": anime}
+                anime: anime
             }
         });
         res.status(200).json(results);
@@ -76,7 +93,12 @@ router.get("/:anime", async (req, res) => {
     };
 });
 
-// Review Edit
+
+/*
+===================
+   Review Edit
+===================
+*/
 
 router.put("/edit/:entryId", validateSession, async (req, res) => {
     const {rating, content} = req.body;
@@ -110,25 +132,51 @@ router.put("/edit/:entryId", validateSession, async (req, res) => {
     };
 });
 
-// Review Delete
+
+/*
+====================
+   Review Delete
+====================
+*/
 
 router.delete("/delete/:id", validateSession, async (req, res) => {
+    const userId = req.user.id
+    let query;
+
+    if (req.user.role == 'Admin') {
+      query = { 
+        where : { 
+          id: req.params.id 
+        } 
+      };
     
+    } else {
+      query = { 
+        where: { 
+          id: req.params.id, 
+          userId: userId 
+        } 
+      };
+    };
+
     try {
-        const deletedReview = await ReviewModel.destroy({
-            where: {
-                id: req.params.id,
-            },
-        });
-
-        res.status(200).json({
-            message: "Review Removed",
-            deletedReview,
-        });
+        
+        const deletedReview = ReviewModel.destroy(query)
+            if (deletedReview === 0) {
+                res.status(200).json({
+                    message: "Review Removed",
+                    deletedReview,
+                });
+            } else {
+                res.status(200).json({
+                    message: "no entry found"
+                });
+            }
+    
     } catch (e) {
-
+        
         res.status(500).json({
-            message: "Failed to remove Review",
+            message: 'Failed to delete Review',
             error: e
         });
     };

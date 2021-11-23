@@ -21,7 +21,7 @@ router.post("/create", validateSession, async (req, res) => {
             content: content,
             reviewId: reviewId,
             owner: req.user.username,
-            userId: req.user.username
+            userId: req.user.id
         })
         .then(
             comment => {

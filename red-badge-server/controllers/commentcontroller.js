@@ -20,7 +20,8 @@ router.post("/create", validateSession, async (req, res) => {
         await CommentModel.create({
             content: content,
             reviewId: reviewId,
-            owner: req.user.username
+            owner: req.user.username,
+            userId: req.user.username
         })
         .then(
             comment => {
